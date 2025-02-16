@@ -105,6 +105,9 @@ app.UseQuartzJob<HelloJob>(new List<TriggerBuilder>
                                   .WithCronSchedule("0 0 2 ? * 7 *"),
                 });
 var runAt = DateTime.Now.AddMinutes(3);
+
+var dayOfWeek = (int)runAt.DayOfWeek == 0 ? 7 : (int)runAt.DayOfWeek;
+
 app.UseQuartzJob<LongRunningJob>(new List<TriggerBuilder>
                 {
                     TriggerBuilder.Create()
@@ -113,7 +116,7 @@ app.UseQuartzJob<LongRunningJob>(new List<TriggerBuilder>
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(2).RepeatForever()),
                      //Add a sample that uses 1-7 for dow
                     TriggerBuilder.Create()
-                                  .WithCronSchedule($"0 {runAt.Minute} {runAt.Hour} ? * {(int)runAt.DayOfWeek} *"),
+                                  .WithCronSchedule($"0 {runAt.Minute} {runAt.Hour} ? * {dayOfWeek} *"),
                 });
 
 app.UseQuartzJob<InjectSampleJob>(() =>

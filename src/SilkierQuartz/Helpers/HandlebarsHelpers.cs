@@ -40,7 +40,7 @@ namespace SilkierQuartz.Helpers
             h.RegisterHelper("SystemTimeZonesJson", (o, c, a) => Json(o, c, TimeZoneInfo.GetSystemTimeZones().ToDictionary()));
             h.RegisterHelper("DefaultDateFormat", (o, c, a) => o.Write(DateTimeSettings.DefaultDateFormat));
             h.RegisterHelper("DefaultTimeFormat", (o, c, a) => o.Write(DateTimeSettings.DefaultTimeFormat));
-            h.RegisterHelper("DoLayout", (o, c, a) => c.Layout());
+            h.RegisterHelper("DoLayout", (o, c, a) => c["Layout"]);
             h.RegisterHelper("SerializeTypeHandler", (o, c, a) => o.WriteSafeString(((Services)a[0]).TypeHandlers.Serialize((TypeHandlerBase)c)));
             h.RegisterHelper("Disabled", (o, c, a) => { if (IsTrue(a[0])) o.Write("disabled"); });
             h.RegisterHelper("Checked", (o, c, a) => { if (IsTrue(a[0])) o.Write("checked"); });
@@ -63,7 +63,7 @@ namespace SilkierQuartz.Helpers
             h.RegisterHelper(nameof(Logo), Logo);
             h.RegisterHelper(nameof(ProductName), ProductName);
         }
-
+        
         static bool IsTrue(object value) => value?.ToString()?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
         string HtmlEncode(object value) => _services.ViewEngine.Encode(value);
@@ -115,18 +115,18 @@ namespace SilkierQuartz.Helpers
             return sb.ToString();
         }
 
-        void ViewBag(TextWriter output, dynamic context, params object[] arguments)
+        void ViewBag(EncodedTextWriter output, Context context, Arguments arguments)
         {
             var dict = (IDictionary<string, object>)arguments[0];
-            var viewBag = (IDictionary<string, object>)context.ViewBag;
+            var viewBag = (IDictionary<string, object>)context["ViewBag"];
 
             foreach (var pair in dict)
             {
                 viewBag[pair.Key] = pair.Value;
             }
         }
-
-        void MenuItemActionLink(TextWriter output, dynamic context, params object[] arguments)
+        
+        void MenuItemActionLink(EncodedTextWriter output, Context context, Arguments arguments)
         {
             var dict = arguments[0] as IDictionary<string, object> ?? new Dictionary<string, object>() { ["controller"] = arguments[0] };
 
@@ -136,7 +136,7 @@ namespace SilkierQuartz.Helpers
             }
 
             var classes = "item";
-            if (dict["controller"].Equals(context.ControllerName))
+            if (dict["controller"].Equals(context["ControllerName"]))
                 classes += " active";
 
             var url = BaseUrl + dict["controller"];
@@ -145,7 +145,7 @@ namespace SilkierQuartz.Helpers
             output.WriteSafeString($@"<a href=""{url}"" class=""{classes}"">{title}</a>");
         }
 
-        void ActionUrl(TextWriter output, dynamic context, params object[] arguments)
+        void ActionUrl(EncodedTextWriter output, Context context, Arguments arguments)
         {
             if (arguments.Length < 1 || arguments.Length > 3)
                 throw new ArgumentOutOfRangeException(nameof(arguments));
@@ -169,7 +169,7 @@ namespace SilkierQuartz.Helpers
                 routeValues = (IDictionary<string, object>)arguments[2];
 
             if (controller == null)
-                controller = context.ControllerName;
+                controller = context["ControllerName"] as string ?? string.Empty;
 
             var url = BaseUrl + controller;
 
@@ -179,7 +179,7 @@ namespace SilkierQuartz.Helpers
             output.WriteSafeString(AddQueryString(url, routeValues));
         }
 
-        void Selected(TextWriter output, dynamic context, params object[] arguments)
+        void Selected(EncodedTextWriter output, Context context, Arguments arguments)
         {
             string selected;
             if (arguments.Length >= 2)
@@ -191,18 +191,18 @@ namespace SilkierQuartz.Helpers
                 output.Write("selected");
         }
 
-        void Json(TextWriter output, dynamic context, params object[] arguments)
+        void Json(EncodedTextWriter output, Context context, Arguments arguments)
         {
             output.WriteSafeString(Newtonsoft.Json.JsonConvert.SerializeObject(arguments[0]));
         }
 
-        void RenderJobDataMapValue(TextWriter output, dynamic context, params object[] arguments)
+        void RenderJobDataMapValue(EncodedTextWriter output, Context context, Arguments arguments)
         {
             var item = (JobDataMapItem)arguments[1];
             output.WriteSafeString(item.SelectedType.RenderView((Services)arguments[0], item.Value));
         }
 
-        void isType(TextWriter writer, HelperOptions options, dynamic context, params object[] arguments)
+        void isType(EncodedTextWriter writer, BlockHelperOptions options, Context context, Arguments arguments)
         {
             Type[] expectedType;
 
@@ -228,7 +228,7 @@ namespace SilkierQuartz.Helpers
                 options.Inverse(writer, (object)context);
         }
 
-        void eachPair(TextWriter writer, HelperOptions options, dynamic context, params object[] arguments)
+        void eachPair(EncodedTextWriter writer, BlockHelperOptions options, Context context, Arguments arguments)
         {
             void OutputElements<T>()
             {
@@ -243,12 +243,12 @@ namespace SilkierQuartz.Helpers
             OutputElements<KeyValuePair<string, object>>();
         }
 
-        void eachItems(TextWriter writer, HelperOptions options, dynamic context, params object[] arguments)
+        void eachItems(EncodedTextWriter writer, BlockHelperOptions options, Context context, Arguments arguments)
         {
             eachPair(writer, options, context, ((dynamic)arguments[0]).GetItems());
         }
 
-        void ToBase64(TextWriter output, dynamic context, params object[] arguments)
+        void ToBase64(EncodedTextWriter output, Context context, Arguments arguments)
         {
             var bytes = (byte[])arguments[0];
 
@@ -256,7 +256,7 @@ namespace SilkierQuartz.Helpers
                 output.Write(Convert.ToBase64String(bytes));
         }
 
-        void footer(TextWriter writer, HelperOptions options, dynamic context, params object[] arguments)
+        void footer(EncodedTextWriter writer, BlockHelperOptions options, Context context, Arguments arguments)
         {
             IDictionary<string, object> viewBag = context.ViewBag;
 
@@ -265,17 +265,17 @@ namespace SilkierQuartz.Helpers
                 options.Template(writer, (object)context);
             }
         }
-        void SilkierQuartzVersion(TextWriter output, dynamic context, params object[] arguments)
+        void SilkierQuartzVersion(EncodedTextWriter output, Context context, Arguments arguments)
         {
             var v = GetType().Assembly.GetCustomAttributes<AssemblyInformationalVersionAttribute>().FirstOrDefault();
             output.Write(v.InformationalVersion);
         }
 
-        void Logo(TextWriter output, dynamic context, params object[] arguments)
+        void Logo(EncodedTextWriter output, Context context, Arguments arguments)
         {
             output.Write(_services.Options.Logo);
         }
-        void ProductName(TextWriter output, dynamic context, params object[] arguments)
+        void ProductName(EncodedTextWriter output, Context context, Arguments arguments)
         {
             output.Write(_services.Options.ProductName);
         }

@@ -106,11 +106,13 @@ namespace SilkierQuartz.Example
                     .WithSimpleSchedule(x => x.WithIntervalInSeconds(1).RepeatForever()),
                     TriggerBuilder.Create()
                     .WithSimpleSchedule(x => x.WithIntervalInSeconds(2).RepeatForever()),
-                     //Add a sample that uses 1-7 for dow
+                     //Add a sample that uses 1-7 for dow 
                     TriggerBuilder.Create()
                                   .WithCronSchedule("0 0 2 ? * 7 *"),
                 });
             var runAt = DateTime.Now.AddMinutes(3);
+
+            var dayOfWeek = (int)runAt.DayOfWeek == 0 ? 7 : (int)runAt.DayOfWeek;
             app.UseQuartzJob<LongRunningJob>(new List<TriggerBuilder>
                 {
                     TriggerBuilder.Create()
@@ -119,7 +121,7 @@ namespace SilkierQuartz.Example
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(2).RepeatForever()),
                      //Add a sample that uses 1-7 for dow
                     TriggerBuilder.Create()
-                                  .WithCronSchedule($"0 {runAt.Minute} {runAt.Hour} ? * {(int)runAt.DayOfWeek} *"),
+                                  .WithCronSchedule($"0 {runAt.Minute} {runAt.Hour} ? * {dayOfWeek} *"),
                 });
 
             app.UseQuartzJob<InjectSampleJob>(() =>
